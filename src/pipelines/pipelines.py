@@ -13,7 +13,7 @@ def get_pipeline():
 		steps=[
 			('preprocessing',preprocessor),
 			('smote',SMOTE(random_state=42)),
-			('training',LogisticRegression(max_iter=2000,random_state=42))
+			('training',LogisticRegression(max_iter=2000,random_state=42,solver='liblinear',class_weight="balanced"))
 		]
 	)
 

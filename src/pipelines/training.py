@@ -4,37 +4,73 @@ from src.pipelines.pipelines import get_pipeline
 from sklearn.metrics import classification_report , roc_auc_score , precision_recall_curve , auc , recall_score , precision_score , f1_score
 import joblib
 import numpy as np
+from sklearn.model_selection import StratifiedKFold
+
+def get_best_threshold(y_val,y_probs):
+	thresholds = np.linspace(0,1,100)
+	
+	best_t=0
+	best_f1=0
+
+	for t in thresholds:
+		y_pred = (y_probs>=t).astype(int)
+		f1=f1_score(y_val,y_pred)
+
+		if f1>best_f1:
+			best_t=t
+			best_f1=f1
+	
+	return best_t,best_f1
+
+def cross_validated_thresholds(X,y):
+	skf = StratifiedKFold(n_splits=5,shuffle=True,random_state=42)
+	thresholds=[]
+	f1_scores=[]
+
+	for fold , (train_idx , val_idx) in enumerate(skf.split(X,y)):
+		print(f"Fold { fold+1}")
+		X_train,X_val = X.iloc[train_idx] , X.iloc[val_idx]
+		y_train,y_val = y.iloc[train_idx] , y.iloc[val_idx]
+		pipeline = get_pipeline()
+		pipeline.fit(X_train,y_train)
+
+		y_probs = pipeline.predict_proba(X_val)[:,1]
+
+		best_t , best_f1 = get_best_threshold(y_val,y_probs)
+
+		print(f"Best threshold : {best_t} , Best F1 : {best_f1}")
+
+		thresholds.append(best_t)
+		f1_scores.append(best_f1)
+	 
+	return thresholds , f1_scores
+
 
 def run_training_pipeline(data_path,model_path):
 	df=load_data(data_path)
 
 	X_train,y_train,X_val,y_val,X_test,y_test = split_data(df)
 
-	pipeline=get_pipeline()
+	pipeline = get_pipeline()
+
+	thresholds , f1_scores = cross_validated_thresholds(X_train,y_train)
+	best_t = np.mean(thresholds)
+
+	print("Thresholds:", thresholds)
+	print("Threshold mean:", np.mean(thresholds))
+	print("Threshold std:", np.std(thresholds))
+
+	print("F1 scores:", f1_scores)
+	print("Mean F1:", np.mean(f1_scores))
+	print("Std F1:", np.std(f1_scores))
+
+	print(f"Best threshold : {best_t}")
+
 	pipeline.fit(X_train,y_train)
-
-	y_probs = pipeline.predict_proba(X_val)[:,1]
-
-	thresholds_prob = np.linspace(0,1,100)
-
-	best_t = None
-	best_f1=0
-	for t in thresholds_prob:
-		y_pred_t = (y_probs>=t).astype(int)
-		recall = recall_score(y_val,y_pred_t)
-		precision = precision_score(y_val,y_pred_t)
-		f1 = f1_score(y_val,y_pred_t)
-		
-		if f1>best_f1:
-			best_f1=f1
-			best_t=t
-
-		print(f"t : {t:.2f}  P={precision:.4f}  R={recall:.4f}  F1={f1:.4f}")
-
-	print(f"Best threshold : {best_t} , Best F1 : {best_f1}")
 
 	y_test_probs = pipeline.predict_proba(X_test)[:, 1]
 	y_test_pred = (y_test_probs >= best_t).astype(int)
+
 	print(classification_report(y_test,y_test_pred))
 
 	precision , recall , thresholds = precision_recall_curve(y_test,y_test_probs)
