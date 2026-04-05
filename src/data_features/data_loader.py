@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-def load_data(path):
+def load_data(path='data/creditcard.csv'):
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     resolved_path = path if os.path.isabs(path) else os.path.join(project_root, path)
 

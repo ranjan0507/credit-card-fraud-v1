@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard ML | Credit Card Authentication</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="wrapper">
+        <header>
+            <h1>Fraud Nirikshak</h1>
+            <p>Real-time machine learning prediction pipeline</p>
+        </header>
+
+        <div class="main-container">
+            
+            <!-- Visualization Side -->
+            <div class="visual-panel">
+                
+                <!-- Immersive Credit Card -->
+                <div class="credit-card" id="creditCard">
+                    <!-- Shimmer layer shown on loading -->
+                    <div class="shimmer-layer" id="cardShimmer"></div>
+                    
+                    <div class="card-chip">
+                        <svg viewBox="0 0 40 30" width="40" height="30" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5">
+                            <rect x="2" y="2" width="36" height="26" rx="4"/>
+                            <path d="M2 10h14m-14 10h14M24 10h14m-14 10h14M16 2v26M24 2v26"/>
+                        </svg>
+                    </div>
+                    
+                    <div class="card-number-label">CARD NUMBER (ANONYMIZED)</div>
+                    <div class="card-number">1234 1234 1234 1234</div>
+                    
+                    <div class="card-details">
+                        <div class="card-holder">
+                            <div class="label">CARDHOLDER NAME</div>
+                            <div class="value">Ranjan</div>
+                        </div>
+                        <div class="card-expiry">
+                            <div class="label">EXPIRY</div>
+                            <div class="value">12/28</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Results Area -->
+                <div class="result-area" id="resultArea">
+                    <div class="result-header">Real-Time Analysis Status</div>
+                    <div class="status-indicator" id="statusIndicator">
+                        <div class="indicator-dot"></div>
+                        <div class="status-text">Awaiting Transaction...</div>
+                    </div>
+
+                    <div class="probability-box hidden" id="probBox">
+                        <div class="prob-label">Fraud Probability</div>
+                        <div class="prob-value" id="probValue">--%</div>
+                        <div class="gauge-bar">
+                            <div class="gauge-fill" id="gaugeFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="verdict-banner hidden" id="verdictBanner">
+                        VERDICT: <span id="verdictText">--</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Controls Side -->
+            <div class="control-panel">
+                
+                <div class="panel-section">
+                    <h2>Transaction Scenario</h2>
+                    <p class="desc">Select a background data profile (loads predefined V1-V28 PCA vectors).</p>
+                    <div class="scenario-toggles">
+                        <button class="scenario-btn active" id="btnLegit" onclick="setScenario('legit')">
+                            Legitimate Profile
+                        </button>
+                        <button class="scenario-btn warning" id="btnFraud" onclick="setScenario('fraud')">
+                            Fraudulent Profile
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h2>Transaction Details</h2>
+                    <div class="input-group">
+                        <label for="txAmount">Transaction Amount (USD)</label>
+                        <div class="input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" id="txAmount" value="149.62" step="0.01" min="0" max="25000" placeholder="0.00 – 25,000.00">
+                        </div>
+                        <div class="amount-error hidden" id="amountError"></div>
+                        <p class="desc">This is the only explicitly user-provided feature (valid range: $0 – $25,000). The rest (V1-V28) are auto-populated from the selected scenario.</p>
+                    </div>
+                </div>
+
+                <button class="predict-btn" onclick="runPrediction()">
+                    <svg class="spin-icon hidden" id="spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+                    RUN PREDICTION
+                </button>
+
+                <div class="dev-mode-toggle">
+                    <button id="btnToggleJSON" class="text-btn" onclick="toggleDevMode()">+ Advanced / JSON Developer Mode</button>
+                </div>
+
+                <div class="dev-panel hidden" id="devPanel">
+                    <div class="dev-header">
+                        <h3>Raw API Payload</h3>
+                        <span class="badge">Model Features</span>
+                    </div>
+                    <p class="desc">Modify the exact JSON that will be sent to the FastAPI backend. Press "Run Manual Form" to submit.</p>
+                    <textarea id="jsonPayload" rows="12"></textarea>
+                    
+                    <button class="manual-run-btn" onclick="runManualPrediction()">
+                        RUN MANUAL PAYLOAD
+                    </button>
+                    
+                    <div class="error-msg hidden" id="errorMsg"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
